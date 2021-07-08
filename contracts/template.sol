@@ -325,10 +325,17 @@ contract Strategy is CurveStable {
     // function _approveBasic() internal override { super._approveBasic(); }
 
     // >>> approve other rewards on dex
-    // function _approveDex() internal override { super._approveDex(); }
+    function _approveDex() internal override {
+        super._approveDex();
+        IERC20(wmatic).approve(dex[1], 0);
+        IERC20(wmatic).approve(dex[1], type(uint256).max);
+    }
 
     // >>> migrate other rewards to newStrategy
-    // function _migrateRewards(address _newStrategy) internal override { super._migrateRewards(_newStrategy); }
+    function _migrateRewards(address _newStrategy) internal override {
+        super._migrateRewards(_newStrategy);
+        IERC20(wmatic).safeTransfer(_newStrategy, IERC20(wmatic).balanceOf(address(this)));
+    }
 
     function _setPathTarget(uint _tokenId, uint _id) internal {
         if (_id == 0) {
