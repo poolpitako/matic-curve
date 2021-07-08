@@ -75,5 +75,5 @@ def whale(accounts):
     #acc = accounts.at('0xf977814e90da44bfa03b6295a0616a897441acec', force=True)
 
     # whale
-    acc = accounts.at('0x3a47405dd415a626143638f7a7b7145257bd1dfa', force=True)
+    acc = accounts.at('0x0172e05392aba65366c4dbbb70d958bbf43304e4', force=True)
     yield acc
