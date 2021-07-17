@@ -3,10 +3,7 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import {
-    BaseStrategy,
-    StrategyParams
-} from "@yearnvaults/contracts/BaseStrategy.sol";
+import "./BaseStrategyWithSwapperEnabled.sol";
 import {
     SafeERC20,
     SafeMath,
@@ -162,7 +159,7 @@ interface IGauge {
 }
 
 
-abstract contract CurveStable is BaseStrategy {
+abstract contract CurveStable is BaseStrategyWithSwapperEnabled {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
@@ -184,7 +181,7 @@ abstract contract CurveStable is BaseStrategy {
     address public gauge;
     uint256 public keepCRV;
 
-    constructor(address _vault) public BaseStrategy(_vault) {
+    constructor(address _vault, address _tradeFactory) public BaseStrategyWithSwapperEnabled(_vault, _tradeFactory) {
         minReportDelay = 6 hours;
         maxReportDelay = 2 days;
         profitFactor = 1;
@@ -306,7 +303,7 @@ contract Strategy is CurveStable {
     address[] public pathTarget;
     // address public constant reward = wmatic;
 
-    constructor(address _vault) public CurveStable(_vault) {
+    constructor(address _vault, address _tradeFactory) public CurveStable(_vault, _tradeFactory) {
         curve = address(0x445FE580eF8d70FF569aB36e80c647af338db351);
         gauge = address(0x19793B454D3AfC7b454F206Ffe95aDE26cA6912c);
 
@@ -362,52 +359,48 @@ contract Strategy is CurveStable {
             uint256 _debtPayment
         )
     {
-        uint before = balanceOfWant();
-        IGauge(gauge).claim_rewards();
-        uint256 _crv = IERC20(crv).balanceOf(address(this));
-        if (_crv > 0) {
-            _crv = _adjustCRV(_crv);
+        claimRewards();
 
-            address[] memory path = new address[](3);
-            path[0] = crv;
-            path[1] = wmatic;
-            path[2] = pathTarget[0];
-
-            Uni(dex[0]).swapExactTokensForTokens(_crv, uint256(0), path, address(this), now);
-        }
-        // >>> claim reward tokens
-        // >>> if more than one reward tokens, adding them all here
-        // >>> sell all rewards to pathTarget[1]
-        uint256 _wmatic = IERC20(wmatic).balanceOf(address(this));
-        if (_wmatic > 0) {
-            address[] memory path = new address[](2);
-            path[0] = wmatic;
-            path[1] = pathTarget[1];
-
-            Uni(dex[1]).swapExactTokensForTokens(_wmatic, uint256(0), path, address(this), now);
-        }
         uint256 _dai = IERC20(dai).balanceOf(address(this));
         uint256 _usdc = IERC20(usdc).balanceOf(address(this));
         uint256 _usdt = IERC20(usdt).balanceOf(address(this));
         if (_dai > 0 || _usdc > 0 || _usdt > 0) {
             ICurveFi(curve).add_liquidity([_dai, _usdc, _usdt], 0, true);
         }
-        _profit = balanceOfWant().sub(before);
 
-        uint _total = estimatedTotalAssets();
-        uint _debt = vault.strategies(address(this)).totalDebt;
-        if(_total < _debt) {
-            _loss = _debt - _total;
-            _profit = 0;
-        }
+        uint256 totalDebt = vault.strategies(address(this)).totalDebt;
+        uint256 totalAssetsAfterProfit = estimatedTotalAssets();
+        _profit = totalAssetsAfterProfit > totalDebt
+            ? totalAssetsAfterProfit.sub(totalDebt)
+            : 0;
 
-        if (_debtOutstanding > 0) {
-            _withdrawSome(_debtOutstanding);
-            _debtPayment = Math.min(_debtOutstanding, balanceOfWant().sub(_profit));
+
+        uint256 _amountFreed;
+        (_amountFreed, _loss) = liquidatePosition(_debtOutstanding.add(_profit));
+        _debtPayment = Math.min(_debtOutstanding, _amountFreed);
+
+        if (_loss > _profit) {
+          _loss = _loss.sub(_profit);
+          _profit = 0;
+        } else {
+          _profit = _profit.sub(_loss);
+          _loss = 0;
         }
     }
 
-    // NOTE: Can override `tendTrigger` and `harvestTrigger` if necessary
+    function claimRewards() internal {
+        IGauge(gauge).claim_rewards();
+        uint256 _crv = IERC20(crv).balanceOf(address(this));
+        if (_crv > 0) {
+            _crv = _adjustCRV(_crv);
+            _createTrade(crv, pathTarget[0], _crv, 0, 2**256-1);
+        }
+
+        uint256 _wmatic = IERC20(wmatic).balanceOf(address(this));
+        if (_wmatic > 0) {
+            _createTrade(wmatic, pathTarget[1], _crv, 0, 2**256-1);
+        }
+    }
 
     function protectedTokens()
         internal
