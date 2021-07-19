@@ -180,12 +180,14 @@ abstract contract CurveStable is BaseStrategyWithSwapperEnabled {
     address public curve;
     address public gauge;
     uint256 public keepCRV;
+    uint256 public tradeSlippage;
 
     constructor(address _vault, address _tradeFactory) public BaseStrategyWithSwapperEnabled(_vault, _tradeFactory) {
         minReportDelay = 6 hours;
         maxReportDelay = 2 days;
         profitFactor = 1;
         debtThreshold = 1e24;
+        tradeSlippage = 3000;
     }
 
     function _approveBasic() internal virtual {
@@ -217,6 +219,10 @@ abstract contract CurveStable is BaseStrategyWithSwapperEnabled {
         require(_dex == sushiswap, "!dex");
         dex[_id] = _dex;
         _approveDex();
+    }
+
+    function setTradeSlippage(uint256 _tradeSlippage) external onlyAuthorized {
+        tradeSlippage = _tradeSlippage;
     }
 
     function name() external view override returns (string memory) {
@@ -390,15 +396,21 @@ contract Strategy is CurveStable {
 
     function claimRewards() internal {
         IGauge(gauge).claim_rewards();
+
         uint256 _crv = IERC20(crv).balanceOf(address(this));
         if (_crv > 0) {
             _crv = _adjustCRV(_crv);
-            _createTrade(crv, pathTarget[0], _crv, 0, 2**256-1);
+            uint256 crvAllowance = _tradeFactoryAllowance(crv);
+            if (_crv > crvAllowance) {
+                _createTrade(crv, pathTarget[0], _crv - crvAllowance, tradeSlippage, block.timestamp + 604800);
+            }
         }
 
         uint256 _wmatic = IERC20(wmatic).balanceOf(address(this));
         if (_wmatic > 0) {
-            _createTrade(wmatic, pathTarget[1], _crv, 0, 2**256-1);
+            uint256 maticAllowance = _tradeFactoryAllowance(_wmatic);
+            if (_wmatic > maticAllowance) {
+            _createTrade(wmatic, pathTarget[1], _wmatic - maticAllowance, tradeSlippage, block.timestamp + 604800);
         }
     }
 
