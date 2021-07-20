@@ -1,5 +1,5 @@
 import pytest
-from brownie import config, Wei, Contract
+from brownie import config, Wei, Contract, chain
 
 
 @pytest.fixture
@@ -58,8 +58,31 @@ def vault(pm, gov, rewards, guardian, management, token):
 
 
 @pytest.fixture
-def strategy(accounts, strategist, keeper, vault, Strategy, gov, token):
-    strategy = Strategy.deploy(vault, {"from": strategist})
+def trade_factory():
+    yield Contract("0xc9EB13d39bd7fF767bE985f5640a43b07104b40d")
+
+
+@pytest.fixture
+def sushi_swapper():
+    yield Contract("0xbE623bedfb701a526abe6cE80333eD10b3936563")
+
+
+@pytest.fixture
+def swapper_registry():
+    yield Contract("0xcb12Ac8649eA06Cbb15e29032163938D5F86D8ad")
+
+
+@pytest.fixture
+def ymechanic(accounts):
+    yield accounts.at("0xB82193725471dC7bfaAB1a3AB93c7b42963F3265", True)
+
+
+@pytest.fixture
+def strategy(accounts, strategist, keeper, vault, Strategy, gov, token, trade_factory, sushi_swapper, swapper_registry, ymechanic):
+    strategy = Strategy.deploy(vault, trade_factory, {"from": strategist})
+    trade_factory.grantRole(trade_factory.STRATEGY(), strategy, {"from": ymechanic})
+    strategy.setSwapper(swapper_registry.nameByAddress(sushi_swapper), False)
+    strategy.setSwapperCheckpoint(chain.time(), {"from": vault.governance()})
     strategy.setKeeper(keeper)
     vault.addStrategy(strategy, 10_000, 0, 2 ** 256 - 1, 1_000, {"from": gov})
 

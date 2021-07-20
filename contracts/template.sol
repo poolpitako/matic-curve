@@ -187,7 +187,7 @@ abstract contract CurveStable is BaseStrategyWithSwapperEnabled {
         maxReportDelay = 2 days;
         profitFactor = 1;
         debtThreshold = 1e24;
-        tradeSlippage = 3000;
+        tradeSlippage = 3_000;
     }
 
     function _approveBasic() internal virtual {
@@ -408,9 +408,10 @@ contract Strategy is CurveStable {
 
         uint256 _wmatic = IERC20(wmatic).balanceOf(address(this));
         if (_wmatic > 0) {
-            uint256 maticAllowance = _tradeFactoryAllowance(_wmatic);
+            uint256 maticAllowance = _tradeFactoryAllowance(wmatic);
             if (_wmatic > maticAllowance) {
-            _createTrade(wmatic, pathTarget[1], _wmatic - maticAllowance, tradeSlippage, block.timestamp + 604800);
+                _createTrade(wmatic, pathTarget[1], _wmatic - maticAllowance, tradeSlippage, block.timestamp + 604800);
+            }
         }
     }
 
