@@ -64,7 +64,7 @@ def trade_factory():
 
 @pytest.fixture
 def sushi_swapper():
-    yield Contract("0xbE623bedfb701a526abe6cE80333eD10b3936563")
+    yield Contract("0x67B4fEDD812656Ea44CE977f2c818532E5D91571")
 
 
 @pytest.fixture
@@ -78,7 +78,19 @@ def ymechanic(accounts):
 
 
 @pytest.fixture
-def strategy(accounts, strategist, keeper, vault, Strategy, gov, token, trade_factory, sushi_swapper, swapper_registry, ymechanic):
+def strategy(
+    accounts,
+    strategist,
+    keeper,
+    vault,
+    Strategy,
+    gov,
+    token,
+    trade_factory,
+    sushi_swapper,
+    swapper_registry,
+    ymechanic,
+):
     strategy = Strategy.deploy(vault, trade_factory, {"from": strategist})
     trade_factory.grantRole(trade_factory.STRATEGY(), strategy, {"from": ymechanic})
     strategy.setSwapper(swapper_registry.nameByAddress(sushi_swapper), False)
@@ -95,8 +107,8 @@ def whale(accounts):
     # acc = accounts.at('0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8', force=True)
 
     # binance8 wallet
-    #acc = accounts.at('0xf977814e90da44bfa03b6295a0616a897441acec', force=True)
+    # acc = accounts.at('0xf977814e90da44bfa03b6295a0616a897441acec', force=True)
 
     # whale
-    acc = accounts.at('0x0172e05392aba65366c4dbbb70d958bbf43304e4', force=True)
+    acc = accounts.at("0x0172e05392aba65366c4dbbb70d958bbf43304e4", force=True)
     yield acc

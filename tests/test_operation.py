@@ -3,7 +3,9 @@ from useful_methods import state_of_vault, state_of_strategy
 import brownie
 
 
-def test_operation(web3, chain, vault, strategy, token, whale, gov, strategist, rewards, amount):
+def test_operation(
+    web3, chain, vault, strategy, token, whale, gov, strategist, rewards, amount
+):
     scale = 10 ** token.decimals()
     # Deposit to the vault
     token.approve(vault, 2 ** 256 - 1, {"from": whale})

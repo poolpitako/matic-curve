@@ -3,7 +3,20 @@ from useful_methods import state_of_vault, state_of_strategy
 import brownie
 
 
-def test_operation(web3, chain, vault, strategy, token, whale, gov, strategist, rewards, amount, trade_factory, ymechanic):
+def test_operation(
+    web3,
+    chain,
+    vault,
+    strategy,
+    token,
+    whale,
+    gov,
+    strategist,
+    rewards,
+    amount,
+    trade_factory,
+    ymechanic,
+):
     scale = 10 ** token.decimals()
     # Deposit to the vault
     token.approve(vault, 2 ** 256 - 1, {"from": whale})
@@ -31,9 +44,6 @@ def test_operation(web3, chain, vault, strategy, token, whale, gov, strategist, 
     chain.mine(1)
     state_of_vault(vault, token)
 
-    # print(f"\n >>> set path")
-    # strategy.setPathTarget(0, 1, {"from": strategist})
-
     print(f"\n >>> ethToWant")
     print(f"ethToWant: {strategy.ethToWant(Wei('1 ether'))}")
 
@@ -44,6 +54,9 @@ def test_operation(web3, chain, vault, strategy, token, whale, gov, strategist, 
     for id in trade_factory.pendingTradesIds(strategy):
         print(f"Executing trade {id}")
         trade_factory.execute(id, {"from": ymechanic})
+
+    dai = Contract("0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063")
+    assert dai.balanceOf(strategy) > 0
 
     print(f"\n****** State ******")
     state_of_strategy(strategy, token, vault)
@@ -54,8 +67,9 @@ def test_operation(web3, chain, vault, strategy, token, whale, gov, strategist, 
     chain.mine(1)
     state_of_vault(vault, token)
 
-    # print(f"\n >>> set path")
-    # strategy.setPathTarget(0, 2, {"from": strategist})
+    print(f"\n >>> set path")
+    strategy.setPathTarget(0, 1, {"from": strategist})
+    strategy.setPathTarget(1, 1, {"from": strategist})
 
     print(f"\n >>> ethToWant")
     print(f"ethToWant: {strategy.ethToWant(Wei('1 ether'))}")
@@ -67,6 +81,10 @@ def test_operation(web3, chain, vault, strategy, token, whale, gov, strategist, 
         print(f"Executing trade {id}")
         trade_factory.execute(id, {"from": ymechanic})
 
+    usdc = Contract("0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174")
+    assert usdc.balanceOf(strategy) > 0
+
+    assert len(trade_factory.pendingTradesIds(strategy)) == 0
     print(f"\n****** State ******")
     state_of_strategy(strategy, token, vault)
     state_of_vault(vault, token)

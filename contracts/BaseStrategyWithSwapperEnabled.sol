@@ -3,8 +3,7 @@
 pragma solidity 0.6.12;
 
 import {
-    BaseStrategy,
-    StrategyParams
+    BaseStrategy
 } from "@yearnvaults/contracts/BaseStrategy.sol";
 import './SwapperEnabled.sol';
 
