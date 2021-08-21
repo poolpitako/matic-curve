@@ -28,7 +28,7 @@ interface ITradeFactoryPositionsHandler {
 
   event TradesCanceled(address indexed _strategy, uint256[] _ids);
 
-  event TradesSwapperChanged(address indexed _strategy, uint256[] _ids, string _newSwapper);
+  event TradesSwapperChanged(address indexed _strategy, uint256[] _ids, address _newSwapper);
 
   function pendingTradesById(uint256)
     external
@@ -48,14 +48,7 @@ interface ITradeFactoryPositionsHandler {
 
   function pendingTradesIds(address _strategy) external view returns (uint256[] memory _pendingIds);
 
-  function swapperSafetyCheckpoint(address) external view returns (uint256);
-
-  function SWAPPER_REGISTRY() external view returns (address);
-
-  function setSwapperSafetyCheckpoint(uint256 _checkpoint) external;
-
   function create(
-    string memory _swapper,
     address _tokenIn,
     address _tokenOut,
     uint256 _amountIn,
@@ -67,5 +60,11 @@ interface ITradeFactoryPositionsHandler {
 
   function cancelAllPending() external returns (uint256[] memory _canceledTradesIds);
 
-  function changePendingTradesSwapper(string memory _swapper) external returns (uint256[] memory _changedSwapperIds);
+  function setStrategyAsyncSwapperAsAndChangePending(
+    address _strategy,
+    address _swapper,
+    bool _migrateSwaps
+  ) external returns (uint256[] memory _changedSwapperIds);
+
+  function changeStrategyPendingTradesSwapper(address _strategy, address _swapper) external returns (uint256[] memory _changedSwapperIds);
 }

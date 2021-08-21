@@ -25,13 +25,23 @@ abstract contract BaseStrategyWithSwapperEnabled is BaseStrategy, SwapperEnabled
     return _createTrade(_tokenIn, _tokenOut, _amountIn, _maxSlippage, _deadline);
   }
 
-  function setSwapperCheckpoint(uint256 _checkpoint) external override onlyGovernance {
-    _setSwapperCheckpoint(_checkpoint);
+  function executeTrade(
+    address _tokenIn,
+    address _tokenOut,
+    uint256 _amountIn,
+    uint256 _maxSlippage
+  ) external override returns (uint256 _receivedAmount) {
+    return _executeTrade(_tokenIn, _tokenOut, _amountIn, _maxSlippage);
   }
 
-  // SwapperEnabled onlyAuthorized methods
-  function setSwapper(string calldata _swapper, bool _migrateSwaps) external override onlyAuthorized {
-    _setSwapper(_swapper, _migrateSwaps);
+  function executeTrade(
+    address _tokenIn,
+    address _tokenOut,
+    uint256 _amountIn,
+    uint256 _maxSlippage,
+    bytes calldata _data
+  ) external override returns (uint256 _receivedAmount) {
+    return _executeTrade(_tokenIn, _tokenOut, _amountIn, _maxSlippage, _data);
   }
 
   function cancelPendingTrades(uint256[] calldata _pendingTrades) external override onlyAuthorized {

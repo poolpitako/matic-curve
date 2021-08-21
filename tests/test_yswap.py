@@ -15,8 +15,11 @@ def test_operation(
     rewards,
     amount,
     trade_factory,
-    ymechanic,
+    yswapper_safe,
+    ymechanic
 ):
+
+    assert False
     scale = 10 ** token.decimals()
     # Deposit to the vault
     token.approve(vault, 2 ** 256 - 1, {"from": whale})
@@ -53,7 +56,7 @@ def test_operation(
     print(f"Executing trades")
     for id in trade_factory.pendingTradesIds(strategy):
         print(f"Executing trade {id}")
-        trade_factory.execute(id, {"from": ymechanic})
+        trade_factory.execute(id, '', {"from": ymechanic})
 
     dai = Contract("0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063")
     assert dai.balanceOf(strategy) > 0
@@ -79,7 +82,7 @@ def test_operation(
     print(f"Executing trades")
     for id in trade_factory.pendingTradesIds(strategy):
         print(f"Executing trade {id}")
-        trade_factory.execute(id, {"from": ymechanic})
+        trade_factory.execute(id, '', {"from": ymechanic})
 
     usdc = Contract("0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174")
     assert usdc.balanceOf(strategy) > 0
